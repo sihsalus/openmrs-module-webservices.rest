@@ -11,6 +11,11 @@ This is not an official OpenMRS 3.5.1 release.
   UTF-8 plain text with `X-Content-Type-Options: nosniff`.
 - Module descriptor uses the exact release version, without an SCM suffix.
 - The source and regression tests are committed here. No external patch file is applied.
+- Authorization tests commit their initial, isolated H2 role fixtures so Core
+  2.8.9's independent role-privilege cache transaction can read them. Test-body
+  writes still roll back, fixture metadata is removed after that rollback, and
+  the existing denied-access assertions are preserved. Runtime authorization
+  behavior is unchanged.
 
 ## Verification and publication
 

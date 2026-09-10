@@ -13,6 +13,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import org.junit.Rule;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.openmrs.Role;
@@ -22,12 +23,14 @@ import org.openmrs.api.UserService;
 import org.openmrs.api.context.Context;
 import org.openmrs.api.context.ContextAuthenticationException;
 import org.openmrs.module.webservices.rest.web.RestTestConstants1_8;
+import org.openmrs.module.webservices.rest.web.CommittedRoleFixture;
 import org.openmrs.module.webservices.rest.web.v1_0.controller.RestControllerTestUtils;
 import org.openmrs.api.ValidationException;
 import org.openmrs.util.PrivilegeConstants;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.mock.web.MockHttpServletResponse;
+import org.springframework.test.context.transaction.AfterTransaction;
 
 public class ChangePasswordController1_8Test extends RestControllerTestUtils {
 	
@@ -39,6 +42,22 @@ public class ChangePasswordController1_8Test extends RestControllerTestUtils {
 	@Autowired
 	@Qualifier("userService")
 	private UserService service;
+
+	private CommittedRoleFixture passwordEditorRole;
+
+	@Before
+	public void createCommittedRoleFixture() throws Exception {
+		passwordEditorRole = CommittedRoleFixture.create(getConnection(), PrivilegeConstants.EDIT_USER_PASSWORDS,
+		        PrivilegeConstants.GET_GLOBAL_PROPERTIES);
+	}
+
+	@AfterTransaction
+	public void removeCommittedRoleFixture() throws Exception {
+		if (passwordEditorRole != null) {
+			passwordEditorRole.close();
+			passwordEditorRole = null;
+		}
+	}
 	
 	@Test
 	public void updateUser_shouldUpdateTheUserPassword() throws Exception {
@@ -107,17 +126,8 @@ public class ChangePasswordController1_8Test extends RestControllerTestUtils {
 	@Test
 	public void testUserChangeOtherUsersPassword() throws Exception {
 		Context.checkCoreDataset();
+		Role role = service.getRole(passwordEditorRole.getName());
 		User authenticatedUser = setUpUser("daemon");
-		
-		Role role = new Role("Privileged Role");
-
-		try {
-			Context.addProxyPrivilege(PrivilegeConstants.GET_PRIVILEGES);
-			role.addPrivilege(service.getPrivilege(PrivilegeConstants.EDIT_USER_PASSWORDS));
-			role.addPrivilege(service.getPrivilege(PrivilegeConstants.GET_GLOBAL_PROPERTIES));
-		} finally {
-			Context.removeProxyPrivilege(PrivilegeConstants.GET_PRIVILEGES);
-		}
 		authenticatedUser.addRole(role);
 
 		String newPassword = "newTest9453!#$";

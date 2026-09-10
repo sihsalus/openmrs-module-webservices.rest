@@ -9,6 +9,7 @@
  */
 package org.openmrs.module.webservices.rest.web;
 
+import org.junit.Before;
 import org.junit.Test;
 import org.openmrs.Concept;
 import org.openmrs.ConceptName;
@@ -17,7 +18,6 @@ import org.openmrs.Encounter;
 import org.openmrs.Obs;
 import org.openmrs.Person;
 import org.openmrs.PersonName;
-import org.openmrs.Privilege;
 import org.openmrs.Role;
 import org.openmrs.User;
 import org.openmrs.Visit;
@@ -31,6 +31,7 @@ import org.openmrs.module.webservices.rest.web.resource.impl.DelegatingResourceD
 import org.openmrs.module.webservices.rest.web.v1_0.resource.openmrs1_8.EncounterResource1_8;
 import org.openmrs.web.test.BaseModuleWebContextSensitiveTest;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.test.context.transaction.AfterTransaction;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -50,6 +51,21 @@ public class ConversionUtil1_9Test extends BaseModuleWebContextSensitiveTest {
 
     @Autowired
     ConceptService conceptService;
+
+    private CommittedRoleFixture limitedRole;
+
+    @Before
+    public void createCommittedRoleFixture() throws Exception {
+        limitedRole = CommittedRoleFixture.create(getConnection(), "Get Visits");
+    }
+
+    @AfterTransaction
+    public void removeCommittedRoleFixture() throws Exception {
+        if (limitedRole != null) {
+            limitedRole.close();
+            limitedRole = null;
+        }
+    }
 
     @Test
     public void convertToRepresentation_shouldConvertObsDrugValueAsNull() {
@@ -149,7 +165,7 @@ public class ConversionUtil1_9Test extends BaseModuleWebContextSensitiveTest {
      * GET /visit?v=custom:(uuid,patient:(uuid,display,person:(uuid,gender)))
      */
     @Test
-    public void convertToRepresentation_shouldNotLeakPatientDataThroughVisitCustomRepresentation() {
+    public void convertToRepresentation_shouldNotLeakPatientDataThroughVisitCustomRepresentation() throws Exception {
         Visit visit = Context.getVisitService().getVisitByUuid(RestTestConstants1_9.VISIT_UUID);
         assertNotNull(visit);
         assertNotNull(visit.getPatient());
@@ -195,7 +211,7 @@ public class ConversionUtil1_9Test extends BaseModuleWebContextSensitiveTest {
         assertEquals(rep, customRepresentation.getRepresentation());
     }
 
-    private void createLimitedUser() {
+    private void createLimitedUser() throws Exception {
         UserService userService = Context.getUserService();
 
         Person person = new Person();
@@ -203,24 +219,13 @@ public class ConversionUtil1_9Test extends BaseModuleWebContextSensitiveTest {
         person.addName(new PersonName("Limited", null, "User"));
         Context.getPersonService().savePerson(person);
 
-        Role role = new Role("Limited Role");
-        role.setDescription("Role with limited privileges for testing");
-        for (String privName : new String[] { "Get Visits" }) {
-            Privilege priv = userService.getPrivilege(privName);
-            if (priv == null) {
-                priv = new Privilege(privName);
-                priv.setDescription(privName);
-                userService.savePrivilege(priv);
-            }
-            role.addPrivilege(priv);
-        }
-        userService.saveRole(role);
+        Role role = userService.getRole(limitedRole.getName());
 
         User user = new User(person);
         user.setUsername("limited_user");
         user.addRole(role);
         for (Role r : new ArrayList<>(user.getAllRoles())) {
-            if (!r.getRole().equals("Limited Role")) {
+            if (!r.getRole().equals(role.getRole())) {
                 user.removeRole(r);
             }
         }
