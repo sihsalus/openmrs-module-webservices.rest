@@ -24,6 +24,8 @@ import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.mock.web.MockMultipartHttpServletRequest;
 import org.springframework.web.bind.annotation.RequestMethod;
 
+import java.nio.charset.StandardCharsets;
+import org.springframework.http.MediaType;
 import java.sql.Connection;
 import java.sql.ResultSet;
 
@@ -96,6 +98,33 @@ public class ClobDatatypeStorageControllerTest extends MainResourceControllerTes
 		Assert.assertEquals(HttpServletResponse.SC_NOT_FOUND, response.getStatus());
 	}
 	
+
+	@Test
+	public void shouldServeStoredContentAsNonSniffableText() throws Exception {
+		MockHttpServletResponse response = handle(newGetRequest(getURI() + "/"
+		        + RestTestConstants1_9.CLOBDATATYPESTORAGE_RESOURCE_UUID));
+		Assert.assertEquals(HttpServletResponse.SC_OK, response.getStatus());
+		Assert.assertEquals(MediaType.parseMediaType("text/plain;charset=UTF-8"),
+		    MediaType.parseMediaType(response.getContentType()));
+		Assert.assertEquals("nosniff", response.getHeader("X-Content-Type-Options"));
+	}
+
+	@Test
+	public void shouldRoundTripUnicodeWithoutUsingContentEncodingAsCharset() throws Exception {
+		String text = "Atención – niño – ≥18 – 日本語";
+		MockMultipartHttpServletRequest request = new MockMultipartHttpServletRequest();
+		request.setRequestURI(getBaseRestURI() + getURI());
+		request.setMethod(RequestMethod.POST.name());
+		request.addHeader("Content-Type", "multipart/form-data");
+		request.addHeader("Content-Encoding", "gzip");
+		request.addFile(new MockMultipartFile("file", "form.txt", "text/plain", text.getBytes(StandardCharsets.UTF_8)));
+		MockHttpServletResponse created = handle(request);
+		Assert.assertEquals(HttpServletResponse.SC_CREATED, created.getStatus());
+		MockHttpServletResponse fetched = handle(newGetRequest(getURI() + "/" + created.getContentAsString()));
+		Assert.assertEquals(HttpServletResponse.SC_OK, fetched.getStatus());
+		Assert.assertEquals(text, fetched.getContentAsString());
+	}
+
 	@Override
 	public String getURI() {
 		return "clobdata";

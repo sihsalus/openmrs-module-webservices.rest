@@ -26,6 +26,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.nio.charset.StandardCharsets;
 
 @Controller
 @RequestMapping(value = "/rest/" + RestConstants.VERSION_1 + "/clobdata")
@@ -39,8 +40,7 @@ public class ClobDatatypeStorageController {
 	public String create(@RequestParam MultipartFile file, HttpServletRequest request, HttpServletResponse response)
 	        throws IOException {
 		ClobDatatypeStorage clobData = new ClobDatatypeStorage();
-		String encoding = request.getHeader("Content-Encoding");
-		clobData.setValue(IOUtils.toString(file.getInputStream(), encoding));
+		clobData.setValue(IOUtils.toString(file.getInputStream(), StandardCharsets.UTF_8));
 		clobData = datatypeService.saveClobDatatypeStorage(clobData);
 		response.setStatus(HttpServletResponse.SC_CREATED);
 		return clobData.getUuid();
@@ -54,6 +54,8 @@ public class ClobDatatypeStorageController {
 		if (clobData == null) {
 			response.setStatus(HttpServletResponse.SC_NOT_FOUND);
 		} else {
+			response.setContentType("text/plain;charset=UTF-8");
+			response.setHeader("X-Content-Type-Options", "nosniff");
 			PrintWriter writer = null;
 			try {
 				writer = response.getWriter();

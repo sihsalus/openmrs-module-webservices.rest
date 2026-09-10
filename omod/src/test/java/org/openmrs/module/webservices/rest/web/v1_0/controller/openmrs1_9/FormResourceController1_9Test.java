@@ -164,6 +164,8 @@ public class FormResourceController1_9Test extends MainResourceControllerTest {
 		String expected = "attachment;filename=\"" + resource.getName() + "\"";
 		Assert.assertTrue(StringUtils.equals((String) response.getHeader("Content-Disposition"), expected));
 		Assert.assertEquals(clobData.getValue(), response.getContentAsString());
+		Assert.assertEquals("nosniff", response.getHeader("X-Content-Type-Options"));
+		Assert.assertTrue(response.getContentType().startsWith("text/plain"));
 	}
 	
 	@Test
