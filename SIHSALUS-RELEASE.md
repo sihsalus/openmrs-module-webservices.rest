@@ -1,0 +1,30 @@
+# SIHSalus REST 3.5.1-sihsalus.1
+
+SIHSalus maintenance build for OpenMRS Core 2.8.9 / Java 21 (javax Servlet).
+This is not an official OpenMRS 3.5.1 release.
+
+## Source and scope
+
+- Upstream base: OpenMRS REST 3.5.0, commit `69fa31fc157be0b0835e2101a0b0e480e0da4acb`.
+- Backport of [upstream PR #748](https://github.com/openmrs/openmrs-module-webservices.rest/pull/748):
+  read CLOB uploads as UTF-8; serve CLOB and delegated form-resource content as
+  UTF-8 plain text with `X-Content-Type-Options: nosniff`.
+- Module descriptor uses the exact release version, without an SCM suffix.
+- The source and regression tests are committed here. No external patch file is applied.
+
+## Verification and publication
+
+CI must pass the complete Maven reactor on Java 21 against the upstream Core
+2.8.7 baseline and Core 2.8.9. The published OMOD is the exact artifact built and
+tested against Core 2.8.9, not a second untested rebuild. External-server REST
+integration tests are not part of this reactor; run synthetic form open/save/edit
+acceptance in DEV before any clinical deployment.
+
+The release workflow verifies module identity, version, UTF-8/plain-text/nosniff
+compiled markers and javax compatibility; it publishes a SHA-256 checksum and
+GitHub build attestation. Releases are immutable SIHSalus prereleases pending
+deployment acceptance. Never replace an existing release or tag.
+
+Verify a downloaded OMOD with `gh attestation verify FILE --repo
+sihsalus/openmrs-module-webservices.rest`, and compare its SHA-256 to the approved
+distribution pin. Release publication does not deploy or restart OpenMRS.
