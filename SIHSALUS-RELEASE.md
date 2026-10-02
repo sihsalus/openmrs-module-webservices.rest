@@ -74,8 +74,12 @@ isolated DEV test directory.
 The initial PR CI passed Core 2.8.7 but exposed an order-dependent cache-test
 precondition on Core 2.8.9: a `PersonName` already in Hibernate's first-level
 session cache was not necessarily present in its second-level cache. The cache
-controller fixture now flushes pending writes and clears the first-level session
-before loading test entities. Assertions for cache presence, HTTP status and
-eviction remain. Both complete CI reactors must pass on the updated head before
-publication; the earlier DEV results above remain evidence for their recorded
-source revision.
+controller fixture flushes pending writes and clears the first-level session
+before loading test entities. That setup alone still failed the same
+precondition on Core 2.8.7 in the subsequent CI run. The single-entity test now
+reloads its actual target through a cache-refreshing query, verifies the returned
+entity and initializes the names collection. The old query used an unrelated ID
+and could not establish the intended target-cache precondition. Assertions for
+cache presence, HTTP status and eviction remain. Both complete CI reactors must
+pass on the updated head before publication; the earlier DEV results above
+remain evidence for their recorded source revision.

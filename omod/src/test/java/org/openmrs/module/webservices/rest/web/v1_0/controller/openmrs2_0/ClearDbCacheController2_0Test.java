@@ -15,6 +15,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
+import org.hibernate.CacheMode;
 import org.hibernate.Query;
 import org.hibernate.SessionFactory;
 import org.junit.Before;
@@ -62,13 +63,16 @@ public class ClearDbCacheController2_0Test extends RestControllerTestUtils {
 	public void clearDbCache_shouldEvictTheEntityFromTheCaches() throws Exception {
 		PersonName name = personService.getPersonName(ID_2);
 		//Load the person so that the names are also stored  in person names collection region
-		personService.getPerson(name.getPerson().getPersonId());
-		//Let's have the name in a query cache
+		personService.getPerson(name.getPerson().getPersonId()).getNames();
+		// Reload the target instead of relying on a prior first-level cache hit.
+		sessionFactory.getCurrentSession().evict(name);
+		// Cache the actual target, even if this query was cached by an earlier test.
 		Query query = sessionFactory.getCurrentSession().createQuery("FROM PersonName WHERE personNameId = ?0");
-		query.setInteger(0, 9351);
+		query.setInteger(0, ID_2);
 		query.setCacheable(true);
 		query.setCacheRegion(QUERY_REGION);
-		query.list();
+		query.setCacheMode(CacheMode.REFRESH);
+		assertEquals(name, query.uniqueResult());
 		
 		assertTrue(sessionFactory.getCache().containsEntity(PERSON_NAME_CLASS, ID_2));
 		assertTrue(sessionFactory.getCache().containsQuery(QUERY_REGION));
