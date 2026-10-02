@@ -41,3 +41,32 @@ deployment acceptance. Never replace an existing release or tag.
 Verify a downloaded OMOD with `gh attestation verify FILE --repo
 sihsalus/openmrs-module-webservices.rest`, and compare its SHA-256 to the approved
 distribution pin. Release publication does not deploy or restart OpenMRS.
+
+## Candidate validation, 2026-10-02
+
+Native tests ran in isolated DEV resources on Java 21, without application-data
+mounts. All 772 tracked source/configuration files except this document matched
+commit `b2b00e2bdd7e6d3bc3c6b89cb486096e2c876ebc`.
+
+| Validation                                                                        | Result  | Evidence                                                              |
+| --------------------------------------------------------------------------------- | ------- | --------------------------------------------------------------------- |
+| Full reactor, Core 2.8.7                                                          | PASSED  | 1,924 tests, 14 skipped, no failures/errors; 407 seconds              |
+| Full reactor, Core 2.8.9                                                          | PASSED  | 1,924 tests, 14 skipped, no failures/errors; 250 seconds              |
+| `python3 tools/verify_omod.py --self-test`                                        | PASSED  | One positive and eight negative fixtures                              |
+| `python3 tools/verify_omod.py omod/target/webservices.rest-3.5.1-sihsalus.2.omod` | PASSED  | Identity, version and compiled UTF-8/plain-text/nosniff/javax markers |
+| External-server REST and synthetic form acceptance                                | NOT RUN | Native reactors do not establish deployed behavior                    |
+| Release publication, attestation and distribution-pin update                      | NOT RUN | Candidate remains unpublished                                         |
+
+For each Core version, the reactor command was:
+
+```bash
+mvn -B -ntp -Dstyle.color=never -Dformatter.skip=true -Dspotless.skip=true \
+  -Dmaven.javadoc.skip=true -Dopenmrs.version=CORE_VERSION clean verify
+```
+
+The verified Core 2.8.9 OMOD has SHA-256
+`06126c8005471be560120392b33613659b0f32e9b5889b733377fb5654bf192e`.
+This identifies the tested local artifact; it is not a published or attested
+release and must not be installed manually into a running distribution. Test
+containers were removed; sources, logs and the candidate binary remain in the
+isolated DEV test directory.
