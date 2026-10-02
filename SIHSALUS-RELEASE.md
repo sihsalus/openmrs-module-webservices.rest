@@ -1,4 +1,4 @@
-# SIHSalus REST 3.5.1-sihsalus.1
+# SIHSalus REST 3.5.1-sihsalus.2
 
 SIHSalus maintenance build for OpenMRS Core 2.8.9 / Java 21 (javax Servlet).
 This is not an official OpenMRS 3.5.1 release.
@@ -9,6 +9,14 @@ This is not an official OpenMRS 3.5.1 release.
 - Backport of [upstream PR #748](https://github.com/openmrs/openmrs-module-webservices.rest/pull/748):
   read CLOB uploads as UTF-8; serve CLOB and delegated form-resource content as
   UTF-8 plain text with `X-Content-Type-Options: nosniff`.
+- Backports of [upstream PR #766](https://github.com/openmrs/openmrs-module-webservices.rest/pull/766)
+  (`ed382e24b442ff7965bc8a01f9958eb1171b0954`) and
+  [PR #770](https://github.com/openmrs/openmrs-module-webservices.rest/pull/770)
+  (`53493a5d53a68d941f5611c7b1fb31d003f8f283`): arbitrate class-based
+  resource lookup by its declared order and let the session endpoint report an
+  expired session without a filter-level 401. Other protected endpoints retain
+  their existing authentication behavior. Both upstream regression suites are
+  included.
 - Module descriptor uses the exact release version, without an SCM suffix.
 - The source and regression tests are committed here. No external patch file is applied.
 - Authorization tests commit their initial, isolated H2 role fixtures so Core
