@@ -17,6 +17,7 @@ import static org.junit.Assert.assertTrue;
 
 import org.hibernate.Query;
 import org.hibernate.SessionFactory;
+import org.junit.Before;
 import org.junit.Test;
 import org.openmrs.Location;
 import org.openmrs.Person;
@@ -49,6 +50,14 @@ public class ClearDbCacheController2_0Test extends RestControllerTestUtils {
 	
 	private static final String QUERY_REGION = "test";
 	
+	@Before
+	public void prepareSecondLevelCacheReads() {
+		// A first-level cache hit does not repopulate an evicted second-level entry.
+		// Flush fixture writes before clearing so each test loads its entities again.
+		sessionFactory.getCurrentSession().flush();
+		sessionFactory.getCurrentSession().clear();
+	}
+
 	@Test
 	public void clearDbCache_shouldEvictTheEntityFromTheCaches() throws Exception {
 		PersonName name = personService.getPersonName(ID_2);

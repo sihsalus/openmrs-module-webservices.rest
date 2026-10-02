@@ -70,3 +70,12 @@ This identifies the tested local artifact; it is not a published or attested
 release and must not be installed manually into a running distribution. Test
 containers were removed; sources, logs and the candidate binary remain in the
 isolated DEV test directory.
+
+The initial PR CI passed Core 2.8.7 but exposed an order-dependent cache-test
+precondition on Core 2.8.9: a `PersonName` already in Hibernate's first-level
+session cache was not necessarily present in its second-level cache. The cache
+controller fixture now flushes pending writes and clears the first-level session
+before loading test entities. Assertions for cache presence, HTTP status and
+eviction remain. Both complete CI reactors must pass on the updated head before
+publication; the earlier DEV results above remain evidence for their recorded
+source revision.
