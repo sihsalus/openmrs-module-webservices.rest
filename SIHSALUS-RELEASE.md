@@ -71,15 +71,26 @@ release and must not be installed manually into a running distribution. Test
 containers were removed; sources, logs and the candidate binary remain in the
 isolated DEV test directory.
 
-The initial PR CI passed Core 2.8.7 but exposed an order-dependent cache-test
-precondition on Core 2.8.9: a `PersonName` already in Hibernate's first-level
-session cache was not necessarily present in its second-level cache. The cache
-controller fixture flushes pending writes and clears the first-level session
-before loading test entities. That setup alone still failed the same
-precondition on Core 2.8.7 in the subsequent CI run. The single-entity test now
-reloads its actual target through a cache-refreshing query, verifies the returned
-entity and initializes the names collection. The old query used an unrelated ID
-and could not establish the intended target-cache precondition. Assertions for
-cache presence, HTTP status and eviction remain. Both complete CI reactors must
-pass on the updated head before publication; the earlier DEV results above
-remain evidence for their recorded source revision.
+PR CI exposed a cache-test precondition on both Core versions before the
+endpoint was called. Targeted DEV tests reproduced it. The cache-controller
+fixture now starts a fresh rollback transaction after Core's committed base
+fixture and cache resets, removes the specific fixture entries, and explicitly
+reloads the target and a control through a cache-refreshing query. The old query
+used an unrelated ID. The test verifies the returned target and that the control
+remains cached after the selected target is evicted. Existing cache-presence,
+HTTP-status and eviction assertions remain.
+
+Both complete CI reactors must pass on the updated head before publication; the
+earlier full DEV reactor results above remain evidence for their recorded source
+revision. Final targeted DEV validation is recorded separately from those
+reactors and from deployment acceptance.
+
+Final targeted DEV validation passed on Java 21 for Core 2.8.7 and Core 2.8.9:
+four cache-controller tests executed on each, without skips, failures or errors.
+The Core 2.8.7 result was also repeated successfully. The tested cache-fixture
+SHA-256 is `56c4cfd286687439ae7cd45c5f115c22fa3c739de1168cf5810132be9ee46246`.
+These runs used the reactor command above with offline dependency resolution,
+`-Dtest=ClearDbCacheController2_0Test`,
+`-Dsurefire.failIfNoSpecifiedTests=false -DfailIfNoTests=false`, and `clean package`.
+Other test classes were deliberately excluded from this focused validation;
+complete PR CI is still required on the final head.
