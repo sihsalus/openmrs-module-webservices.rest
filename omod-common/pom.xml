@@ -3,7 +3,7 @@
 	<parent>
 		<groupId>org.openmrs.module</groupId>
 		<artifactId>webservices.rest</artifactId>
-		<version>3.5.1-sihsalus.1</version>
+		<version>3.5.1-sihsalus.2</version>
 	</parent>
 	<artifactId>webservices.rest-omod-common</artifactId>
 	<packaging>jar</packaging>
