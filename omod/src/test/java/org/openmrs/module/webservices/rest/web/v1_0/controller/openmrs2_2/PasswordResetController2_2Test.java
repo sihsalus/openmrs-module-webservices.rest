@@ -122,7 +122,9 @@ public class PasswordResetController2_2Test extends RestControllerTestUtils {
 		credentials
 		        .setActivationKey("b071c88d6d877922e35af2e6a90dd57d37ac61143a03bb986c5f353566f3972a86ce9b2604c31a22dfa467922dcfd54fa7d18b0a7c7648d94ca3d97a88ea2fd0:"
 		                + tokenTime);
-		dao.updateLoginCredential(credentials);
+		// Seed only the activation token. Core 2.8.10 guards general credential
+		// updates so password changes must continue through UserService.
+		dao.setUserActivationKey(credentials);
 		String newPassword = "newPasswordString123";
 		MockHttpServletResponse response = handle(newPostRequest(RESET_PASSWORD_URI + "/" + key, "{\"newPassword\":\""
 		        + newPassword + "\"}"));

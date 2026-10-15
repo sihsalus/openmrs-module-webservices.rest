@@ -15,8 +15,10 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
+import org.hibernate.CacheMode;
 import org.hibernate.Query;
 import org.hibernate.SessionFactory;
+import org.junit.Before;
 import org.junit.Test;
 import org.openmrs.Location;
 import org.openmrs.Person;
@@ -27,6 +29,7 @@ import org.openmrs.module.webservices.rest.web.v1_0.controller.RestControllerTes
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.mock.web.MockHttpServletResponse;
+import org.springframework.test.context.transaction.TestTransaction;
 
 public class ClearDbCacheController2_0Test extends RestControllerTestUtils {
 	
@@ -49,19 +52,36 @@ public class ClearDbCacheController2_0Test extends RestControllerTestUtils {
 	
 	private static final String QUERY_REGION = "test";
 	
+	@Before
+	public void prepareSecondLevelCacheReads() {
+		// Core's base fixture is committed; start a fresh transaction after its cache resets.
+		TestTransaction.flagForRollback();
+		TestTransaction.end();
+		TestTransaction.start();
+		sessionFactory.getCache().evictEntity(PERSON_NAME_CLASS, ID_2);
+		sessionFactory.getCache().evictEntity(PERSON_NAME_CLASS, ID_8);
+		sessionFactory.getCache().evictEntity(Location.class, ID_2);
+	}
+
 	@Test
 	public void clearDbCache_shouldEvictTheEntityFromTheCaches() throws Exception {
 		PersonName name = personService.getPersonName(ID_2);
 		//Load the person so that the names are also stored  in person names collection region
-		personService.getPerson(name.getPerson().getPersonId());
-		//Let's have the name in a query cache
-		Query query = sessionFactory.getCurrentSession().createQuery("FROM PersonName WHERE personNameId = ?0");
-		query.setInteger(0, 9351);
+		personService.getPerson(name.getPerson().getPersonId()).getNames();
+		// Reload the target instead of relying on a prior first-level cache hit.
+		personService.getPersonName(ID_8);
+		sessionFactory.getCurrentSession().clear();
+		// Cache the actual target, even if this query was cached by an earlier test.
+		Query query = sessionFactory.getCurrentSession().createQuery("FROM PersonName WHERE personNameId IN (?0, ?1)");
+		query.setInteger(0, ID_2);
+		query.setInteger(1, ID_8);
 		query.setCacheable(true);
 		query.setCacheRegion(QUERY_REGION);
-		query.list();
+		query.setCacheMode(CacheMode.REFRESH);
+		assertTrue(query.list().contains(name));
 		
 		assertTrue(sessionFactory.getCache().containsEntity(PERSON_NAME_CLASS, ID_2));
+		assertTrue(sessionFactory.getCache().containsEntity(PERSON_NAME_CLASS, ID_8));
 		assertTrue(sessionFactory.getCache().containsQuery(QUERY_REGION));
 		
 		final String data = "{\"resource\": \"person\", \"subResource\": \"name\", \"uuid\": \"" + name.getUuid() + "\"}";
@@ -70,6 +90,7 @@ public class ClearDbCacheController2_0Test extends RestControllerTestUtils {
 		
 		assertEquals(HttpStatus.NO_CONTENT.value(), response.getStatus());
 		assertFalse(sessionFactory.getCache().containsEntity(PERSON_NAME_CLASS, ID_2));
+		assertTrue(sessionFactory.getCache().containsEntity(PERSON_NAME_CLASS, ID_8));
 	}
 	
 	@Test
