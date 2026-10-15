@@ -7,8 +7,8 @@ See [SIHSalus release scope and safety requirements](SIHSALUS-RELEASE.md) before
 The upstream documentation below is retained for reference.
 
 Build with Java 21: `mvn -B -ntp -Dformatter.skip=true -Dspotless.skip=true -Dmaven.javadoc.skip=true clean install`.
-The manual **SIHSalus release** workflow rebuilds and tests both Core baselines,
-then publishes the verified Core 2.8.9 OMOD as an immutable prerelease. Pass the
+The manual **SIHSalus release** workflow rebuilds and tests all three Core baselines,
+then publishes the verified Core 2.8.10 OMOD as an immutable prerelease. Pass the
 exact version already committed in `pom.xml`; it never changes source versions.
 Consumers must pin the release version and OMOD SHA-256, not a moving branch,
 `latest` URL, SNAPSHOT dependency or expiring CI artifact.
