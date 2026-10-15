@@ -18,6 +18,10 @@ This is not the unmodified official OpenMRS 3.6.0 release.
   writes still roll back, fixture metadata is removed after that rollback, and
   the existing denied-access assertions are preserved. Runtime authorization
   behavior is unchanged.
+- Cache-controller tests retain the isolated transaction and cold-fixture setup
+  verified in the earlier backport PR. They explicitly warm the target and a
+  control, preserving assertions that selective eviction leaves the control
+  cached. These are test-only changes needed for repeatable native validation.
 - The password-reset test seeds its activation token with the dedicated DAO
   method. Core 2.8.10 restricts general credential updates; the runtime guard and
   existing password-reset assertions remain intact.
